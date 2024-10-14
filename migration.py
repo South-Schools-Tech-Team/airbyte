@@ -22,9 +22,9 @@ class Server:
         self.password = password
         self.key = key
 
-airbyte_prod = Server(host="143.198.55.148", port=22, username="kpoojary", password="vasant63", key="/Users/kshitij.poojary/.ssh/id_rsa")
-core_worker = Server(host="143.244.183.84", port=22, username="kpoojary", password="vasant63", key="/Users/kshitij.poojary/.ssh/id_rsa")
-airbyte_prod_replica = Server(host="146.190.124.164", port=22, username="kpoojary", password="vasant63", key="/Users/kshitij.poojary/.ssh/id_rsa")
+airbyte_prod = Server(host="143.198.55.148", port=22, username="kpoojary", password="vasant63", key="/home/kpoojary/.ssh/id_rsa")
+core_worker = Server(host="143.244.183.84", port=22, username="kpoojary", password="vasant63", key="/home/kpoojary/.ssh/id_rsa")
+airbyte_prod_replica = Server(host="146.190.124.164", port=22, username="kpoojary", password="vasant63", key="/home/kpoojary/.ssh/id_rsa")
 
 core_worker_db = Database(host='localhost', name='airbyte', user_name='postgres', password='devops')
 
@@ -88,8 +88,8 @@ def import_dump_on_core_worker():
     
     # Create a new database
     create_command = f"PGPASSWORD='{core_worker_db.password}' psql -U {core_worker_db.user_name} -h {core_worker_db.host} -p {core_worker_db.port} -c 'CREATE DATABASE {core_worker_db.name};'"
-    ssh.exec_command(create_command)
-    # print(stdout.read().decode('utf-8'))        
+    _, stdout, stderr = ssh.exec_command(create_command)
+    print(stdout.read().decode('utf-8'))        
     
     # Import the dump into the new database
     import_command = f"PGPASSWORD='{core_worker_db.password}' psql -U {core_worker_db.user_name} -d {core_worker_db.name} -h {core_worker_db.host} -p {core_worker_db.port} -f /home/kpoojary/{LOCAL_DUMP_FILE}"
@@ -113,9 +113,7 @@ def restart_airbyte_on_prod():
     commands = [
         "cd /home/kpoojary",
         "echo 'vasant63' | sudo -S abctl local install --secret ./secret.yaml",
-        "echo 'vasant63' | sudo -S abctl local install --values ./values.yaml",
-        "echo 'vasant63' | sudo -S abctl local install --secret ./secret.yaml",
-        
+        "echo 'vasant63' | sudo -S abctl local install --values ./values.yaml"     
     ]
     for command in commands:
         _, stdout, stderr = ssh.exec_command(command)
