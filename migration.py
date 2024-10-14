@@ -81,17 +81,20 @@ def import_dump_on_core_worker():
 
     try :
         delete_command = f"PGPASSWORD='{core_worker_db.password}' psql -U {core_worker_db.user_name} -h {core_worker_db.host} -p {core_worker_db.port} -c 'DROP DATABASE IF EXISTS {core_worker_db.name} WITH (FORCE);'"
-        ssh.exec_command(delete_command)
+        _, stdout, stderr = ssh.exec_command(delete_command)
+        print(stdout.read().decode('utf-8'))        
     except Exception as e :
         print('Delete database error',e)
-        
+    
     # Create a new database
     create_command = f"PGPASSWORD='{core_worker_db.password}' psql -U {core_worker_db.user_name} -h {core_worker_db.host} -p {core_worker_db.port} -c 'CREATE DATABASE {core_worker_db.name};'"
     ssh.exec_command(create_command)
+    # print(stdout.read().decode('utf-8'))        
     
     # Import the dump into the new database
     import_command = f"PGPASSWORD='{core_worker_db.password}' psql -U {core_worker_db.user_name} -d {core_worker_db.name} -h {core_worker_db.host} -p {core_worker_db.port} -f /home/kpoojary/{LOCAL_DUMP_FILE}"
     _, stdout, stderr = ssh.exec_command(import_command)
+    print(stdout.read().decode('utf-8'))        
     
     error = stderr.read().decode('utf-8')
     if error:
@@ -134,10 +137,12 @@ def cleanup_local_dump():
 
 # Main Execution Flow
 try:
-    # dump_database_on_airbyte_prod()
+    dump_database_on_airbyte_prod()
     # transfer_dump_to_core_worker()
-    # import_dump_on_core_worker()
+    import_dump_on_core_worker()
     restart_airbyte_on_prod()
-    # cleanup_local_dump()
+    cleanup_local_dump()
+    # Disable all connections 
+    # UPDATE connection set status = 'inactive' where status = 'active'
 except Exception as e:
     print(f"An error occurred during the execution: {e}")
