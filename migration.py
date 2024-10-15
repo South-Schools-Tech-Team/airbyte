@@ -93,8 +93,17 @@ def import_dump_on_core_worker():
     
     # Import the dump into the new database
     import_command = f"PGPASSWORD='{core_worker_db.password}' psql -U {core_worker_db.user_name} -d {core_worker_db.name} -h {core_worker_db.host} -p {core_worker_db.port} -f /home/kpoojary/{LOCAL_DUMP_FILE}"
+
     _, stdout, stderr = ssh.exec_command(import_command)
-    print(stdout.read().decode('utf-8'))        
+    # print(stdout.read().decode('utf-8'))        
+    
+    disable_connections = f" PGPASSWORD='devops' psql -U postgres -h localhost -p 5432 -d airbyte -c \"UPDATE connection set status = 'inactive' where status = 'active';\""
+    print(delete_command)
+    print(create_command) 
+    print(import_command)
+    print(disable_connections)
+    _, stdout, stderr = ssh.exec_command(disable_connections)
+    print(stdout.read().decode('utf-8'))  
     
     error = stderr.read().decode('utf-8')
     if error:
