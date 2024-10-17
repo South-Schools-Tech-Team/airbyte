@@ -9,10 +9,10 @@ This document provides an explanation of the migration process for an Airbyte de
 - **Components:**
 
   - **Airbyte-prod**: The existing production instance of Airbyte.
-  - **Database**: The primary database connected to `airbyte-prod`, responsible for storing configuration and data.
+  - **Database**: The primary database is the default database provided by airbyte (airbyte-db container), responsible for storing configuration and data.
 
 - **Architecture Overview:**
-  - This version depicts a single production instance (`airbyte-prod`) directly connected to a database. It represents the initial state of the deployment, where no additional backup or replication mechanisms are in place.
+  - This version depicts a single production instance (`airbyte-prod`). The airbyte server and its database sit on the same server in different docker container. It represents the initial state of the deployment, where no additional backup or replication mechanisms are in place.
 
 ---
 
@@ -23,23 +23,24 @@ This document provides an explanation of the migration process for an Airbyte de
 - **Components:**
 
   1. **Docker Airbyte-prod**:
-     - The production instance is containerized using Docker, interacting with the existing database.
+     - The production instance is the same as version 0
   2. **DB Migration Script**:
      - Facilitates data migration from the current database to a new backup instance.
   3. **Airbyte-prod-backup-replica-2**:
-     - A backup replica of `airbyte-prod`, managed using a custom command-line tool named `abctl`.
+     - A backup replica of `airbyte-prod`, managed using then new command line tool introduced by Airbyte - `abctl`.
   4. **core-worker-01**:
-     - A core worker service connected to a separate database, supporting the backup replica.
-
+     - The database for the replica is now stored and managed externally and resides on the core worker.
 - **Data Flow and Migration Process:**
-  - The **DB Migration Script** is used to migrate data from `Docker Airbyte-prod` to `core-worker-01`, ensuring that both the backup replica (`airbyte-prod-backup-replica-2`) and the core worker are synchronized with the production instance.
-  - This setup establishes a failover mechanism and provides backup capabilities, enhancing the resilience of the system.
+  - The **DB Migration Script** is used to migrate data from `airbyte-prod` to `core-worker-01`, ensuring that both the backup replica (`airbyte-prod-backup-replica-2`) and the original prod (`airbyte-prod`) are synchronized with the production instance.
+  - This setup establishes the following things. 
+    1. The production airbyte is constantly replicated 
+    2. The new command line tool abctl will be tested on the replica 
 
 ---
 
 ## **Version 2: Final Architecture**
 
-- **Objective**: Refine the architecture by restructuring components and integrating new services to improve modularity and fault tolerance.
+- **Objective**: To make airbyte completely fault tolerant and even when the production server crashes an up to date replica should always be available for use.
 
 - **Components:**
 
@@ -53,7 +54,7 @@ This document provides an explanation of the migration process for an Airbyte de
      - Retains its role of handling data, now receiving data via the intermediary (`TBD`) instead of directly from the production instance.
 
 - **Data Flow and Migration Process:**
-  - The **DB Migration Script** facilitates data migration between `airbyte-prod`, `TBD`, and `core-worker-01` to maintain synchronization and data consistency.
+  - The **DB Migration Script** facilitates data migration between `airbyte-prod`and `TBD` to maintain synchronization and data consistency.
   - This architecture separates concerns more effectively and improves scalability and fault tolerance.
 
 ---
